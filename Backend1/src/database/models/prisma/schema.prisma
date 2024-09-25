@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = ""
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatar    String   @default("https://www.shutterstock.com/shutterstock/photos/1760295569/display_1500/stock-vector-profile-picture-avatar-icon-vector-1760295569.jpg")
+  role      UserRole
+  managedHospitals Hospital[] @relation("HospitalAdmins") // Admin manages hospitals
+  contactNumber String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Optional patient-specific details
+  age           Int?
+  gender        Gender?
+  address       String?
+  insuranceCard String?
+  rationCard    String? // Only for government hospitals
+  permanentIllness String?
+  disabilityStatus String?
+
+  // Relations
+  registrations OPDRegistration[]
+  beds          Bed[] // If the user is a patient
+  doctorInfo    Doctor? // If the user is a doctor
+}
+
+model OPDRegistration {
+  id                 Int      @id @default(autoincrement())
+  patientID          Int      @relation(fields: [patientID], references: [id])
+  BookOPDDate          DateTime @default(now())
+  ActualOPDDate      DateTime 
+  symptoms           String?
+  speciality          String
+ // diagnosis          String?
+  //prescribedMedicines String[] // Array of medicines
+  paymentStatus      PaymentStatus
+  additionalNotes    String?
+  bedID              Int?     @relation(fields: [bedID], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  patient            User     @relation(fields: [patientID], references: [id]) // Patient is a user
+  bed                Bed?     @relation(fields: [bedID], references: [id])
+}
+
+model Doctor {
+  id           Int    @id @default(autoincrement())
+  userID       Int    @relation(fields: [userID], references: [id]) // A doctor is also a user
+  speciality   String
+  registrations OPDRegistration[]
+
+  // Relations
+  user         User   @relation(fields: [userID], references: [id])
+}
+
+model Bed {
+  id              Int    @id @default(autoincrement())
+  bedNumber       String
+  availability    Boolean @default(true) // Track if bed is available
+  patientID       Int?    @relation(fields: [patientID], references: [id])
+  registrationID  Int?    @relation(fields: [registrationID], references: [id])
+  assignedDate    DateTime @default(now())
+  status          BedStatus
+  
+  // Relations
+  patient         User?     @relation(fields: [patientID], references: [id]) // Patient is a user
+  registration    OPDRegistration? @relation(fields: [registrationID], references: [id])
+}
+
+model Hospital {
+  id            Int    @id @default(autoincrement())
+  name          String
+  address       String
+  registrationNumber String @unique
+  contactNumber String
+  establishedDate DateTime
+  adminID       Int    @relation(fields: [adminID], references: [id]) // Managed by an admin
+
+  // Relations
+  admin         User   @relation(fields: [adminID], references: [id]) @relation("HospitalAdmins")
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum PaymentStatus {
+  Paid
+  Pending
+}
+
+enum BedStatus {
+  Booked
+  Available
+  Occupied
+}
+
+enum UserRole {
+  Patient
+  Doctor
+  Admin
+}
