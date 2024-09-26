@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  email         String   @unique
+  password      String
+  avatar        String   @default("https://www.shutterstock.com/shutterstock/photos/1760295569/display_1500/stock-vector-profile-picture-avatar-icon-vector-1760295569.jpg")
+  role          UserRole
+  contactNumber String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Optional patient-specific details
+  age              Int?
+  gender           Gender?
+  address          String?
+  insuranceCard    String?
+  rationCard       String? // Only for government hospitals
+  permanentIllness String?
+  disabilityStatus String?
+
+  // Relations
+  registrations    OPDRegistration[]
+  managedHospitals Hospital[]
+  beds             Bed[]
+  doctorInfo       Doctor?
+}
+
+model OPDRegistration {
+  id        Int  @id @default(autoincrement())
+  patientID Int
+  doctorID  Int?
+  bed       Bed?
+
+  patient User    @relation(fields: [patientID], references: [id])
+  doctor  Doctor? @relation(fields: [doctorID], references: [id])
+  // other fields...
+}
+
+model Doctor {
+  id     Int @id @default(autoincrement())
+  userID Int @unique
+
+  user User @relation(fields: [userID], references: [id])
+
+  registrations OPDRegistration[]
+  // other fields...
+}
+
+model Bed {
+  id             Int       @id @default(autoincrement())
+  bedNumber      String
+  availability   Boolean   @default(true)
+  patientID      Int?
+  registrationID Int?      @unique
+  assignedDate   DateTime  @default(now())
+  status         BedStatus
+
+  // Relations
+  patient      User?            @relation(fields: [patientID], references: [id])
+  registration OPDRegistration? @relation(fields: [registrationID], references: [id])
+}
+
+model Hospital {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  address            String
+  registrationNumber String   @unique
+  contactNumber      String
+  establishedDate    DateTime
+  adminID            Int
+
+  // Relations
+  admin User @relation(fields: [adminID], references: [id])
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum PaymentStatus {
+  Paid
+  Pending
+}
+
+enum BedStatus {
+  Booked
+  Available
+  Occupied
+}
+
+enum UserRole {
+  Patient
+  Doctor
+  Admin
+}
