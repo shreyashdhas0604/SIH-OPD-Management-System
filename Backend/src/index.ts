@@ -4,6 +4,16 @@ import cors from "cors";
 import * as dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import {UserModule} from './modules/user';
+import cookieParser from 'cookie-parser';
+import { HospitalModule } from "./modules/hospital";
+import { DoctorModule } from "./modules/doctor";
+import { BedModule } from "./modules/bed";
+import { DepartmentModule } from "./modules/department";
+import { RatingModule } from "./modules/rating";
+import { OPDModule } from "./modules/opd";
+import { initializeRedis } from "./database/redis/Redis";
+import { disconnectRedis } from "./database/redis/Redis";
+import { connectKafka, disconnectKafka } from "./modules/ApacheKafkaService/kafkaClient";
 dotenv.config();
 
 const app: Express = express();
@@ -12,13 +22,26 @@ const prisma = new PrismaClient();
 
 
 async function initializeApp() {
+    app.use(cookieParser());
     app.use(express.json());
-    app.use(cors());
-    app.set('PORT', process.env.PORT || 6000);
+    // app.use(cors());
+    app.use(cors({
+        origin: ['http://localhost:5173','http://localhost:5174'], // Frontend URL
+        credentials: true, // Allows cookies or HTTP auth
+        exposedHeaders: ['Authorization'], // Allows the frontend to access the Authorization header
+    }));
+    app.set('PORT', process.env.PORT || 5000);
     app.set("BASE_URL", process.env.BASE_URL || "localhost");
 
     // app.use('/api', AdminModule);
     app.use('/api', UserModule);
+    app.use('/api',HospitalModule)
+    app.use('/api',DoctorModule);
+    app.use('/api',BedModule);
+    app.use('/api',DepartmentModule);
+    app.use('/api',RatingModule);
+    app.use('/api',OPDModule);
+
 
     app.get('/health', async (req: Request, res: Response) => {
         try {
@@ -53,12 +76,23 @@ async function initializeDatabase() {
 // //     }
 // // }
 
+    async function RedisInit(){
+        try {
+            await initializeRedis();
+        } catch (error) {
+            console.log('Error connecting Redis : ',error);
+        }
+    }
+
 
 async function startServer() {
     try {
         await initializeDatabase();
         // await initializeRedis();
         await initializeApp();
+        await RedisInit();
+        await connectKafka();
+        // await clearUserDatabase();
 
         const port = app.get('PORT');
         server.listen(port, () => {
@@ -70,11 +104,24 @@ async function startServer() {
     }
 }
 
+async function clearUserDatabase() {
+    try {
+        // await prisma.user.deleteMany({});
+        await prisma.oPDRegistration.deleteMany({});
+        console.log("All entries deleted from User model");
+    } catch (error) {
+        console.error("Error clearing User database:", error);
+    }
+}
+
+
 startServer();
 
 process.on('SIGINT', async () => {
     console.log('Shutting down gracefully...');
     await prisma.$disconnect();
+    await disconnectRedis();
+    await disconnectKafka();
     // await redisClient.quit();
     process.exit(0);
 });

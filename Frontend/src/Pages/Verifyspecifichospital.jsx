@@ -2,62 +2,58 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../Components/Header.jsx";
 import Footer from "../Components/Footer.jsx";
-import hospitaldata from "../database.js";
 import { toast } from "react-hot-toast";
+import apiClient from "../api/ApiClient.js";
 
 export default function Verifyspecifichospital() {
-  const { id } = useParams(); // Extract id from URL
-  const [hospital, setHospital] = useState(null); // State to hold hospital data
-  const [hoveredImageIndex, setHoveredImageIndex] = useState(0); // Image index state
-  const [isHovered, setIsHovered] = useState(false); // Hover state for images
-  const [isDetailsHovered, setIsDetailsHovered] = useState(false); // Hover state for hospital details
+  const { id } = useParams();
+  const [hospital, setHospital] = useState(null);
+  const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Find the hospital data based on id
   useEffect(() => {
-    const foundHospital = hospitaldata.find(
-      (hospital) => hospital.id === parseInt(id) // Convert id to number
-    );
-    setHospital(foundHospital);
+    const fetchHospital = async () => {
+      try {
+        const response = await apiClient.get(`/hospital/hospital/${id}`);
+        console.log("In VerifySpecificHospital.jsx response.data:", response.data);
+        setHospital(response.data);
+      } catch (error) {
+        console.error("Error fetching hospital data:", error);
+        toast.error("Failed to load hospital data.");
+      }
+    };
+    fetchHospital();
   }, [id]);
 
-  // Update the hospital status in the hospitaldata array
-  const updateHospitalStatus = (newStatus) => {
-    const hospitalIndex = hospitaldata.findIndex((h) => h.id === parseInt(id));
-    if (hospitalIndex !== -1) {
-      hospitaldata[hospitalIndex].status = newStatus;
-      setHospital({ ...hospitaldata[hospitalIndex] }); // Trigger re-render
+  const updateHospitalStatus = async (newStatus) => {
+    try {
+      const updatedHospital = { ...hospital, isVerified: newStatus };
+      const response = await apiClient.put(`/hospital/update-hospital/${id}`, updatedHospital);
+      console.log("In VerifySpecificHospital.jsx response.data:", response.data);
+      setHospital(updatedHospital);
+      toast.success(`Hospital status updated to: ${newStatus}`);
+    } catch (error) {
+      console.error("Error updating hospital status:", error);
+      toast.error("Failed to update hospital status.");
     }
   };
 
-  // Handle approval action
-  const handleApprove = () => {
-    updateHospitalStatus("approved");
-    toast.success(`You have approved the hospital: ${hospital.name}`);
-  };
+  const handleApprove = () => updateHospitalStatus("Approved");
+  const handleDisapprove = () => updateHospitalStatus("Disapproved");
+  const handlePending = () => updateHospitalStatus("Pending");
 
-  // Handle disapproval action
-  const handleDisapprove = () => {
-    updateHospitalStatus("disapproved");
-    toast.error(`You have disapproved the hospital: ${hospital.name}`);
-  };
-
-  // Effect for sliding images during hover
   useEffect(() => {
     let intervalId;
-    if (isHovered) {
+    if (isHovered && hospital?.hospitalImageUrl?.length) {
       intervalId = setInterval(() => {
-        setHoveredImageIndex((prevIndex) =>
-          (prevIndex + 1) % hospital.url.length // Cycle through images
-        );
-      }, 2000); // Change image every 2 seconds
+        setHoveredImageIndex((prevIndex) => (prevIndex + 1) % hospital.hospitalImageUrl.length);
+      }, 2000);
     }
-
-    // Cleanup the interval on mouse leave or component unmount
     return () => clearInterval(intervalId);
   }, [isHovered, hospital]);
 
   if (!hospital) {
-    return <div>Loading...</div>; // Display a loading message if hospital data is not yet loaded
+    return <div>Loading...</div>;
   }
 
   return (
@@ -66,30 +62,20 @@ export default function Verifyspecifichospital() {
 
       <main className="flex-grow container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {/* Hospital Image Gallery with Hover Effect */}
           <div
-            className="relative mr-6"
+            className="relative"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
             <img
-              src={hospital.url[hoveredImageIndex]} // Image changes based on hoveredImageIndex
+              src={hospital.hospitalImageUrl[hoveredImageIndex]}
               alt={`Hospital Image ${hoveredImageIndex + 1}`}
-              className="border-black w-full h-96 rounded-3xl shadow-2xl object-cover transition-transform duration-500 ease-in-out"
+              className="border-black w-full h-96 rounded-3xl shadow-2xl object-cover"
             />
           </div>
 
-          {/* Hospital Details */}
-          <div
-            className={`bg-blue-100 space-y-4 p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-3000 transform hover:scale-105 hover:bg-blue-200`}
-            onMouseEnter={() => setIsDetailsHovered(true)}
-            onMouseLeave={() => setIsDetailsHovered(false)}
-          >
-            <h2
-              className={`underline text-4xl font-bold transition-colors duration-300 ${
-                isDetailsHovered ? "text-blue-500" : "text-gray-800"
-              }`}
-            >
+          <div className="bg-blue-100 p-6 rounded-xl shadow-lg transition-transform hover:scale-105">
+            <h2 className="underline text-4xl font-bold text-gray-800">
               {hospital.name}
             </h2>
             <p className="text-lg text-gray-600">
@@ -99,38 +85,48 @@ export default function Verifyspecifichospital() {
               <strong>Address:</strong> {hospital.address}
             </p>
             <p className="text-lg text-gray-600">
-              <strong>Contact:</strong> {hospital.contact}
+              <strong>Contact:</strong> {hospital.contactNumber}
             </p>
             <p className="text-lg text-gray-600">
               <strong>Timings:</strong> {hospital.timings}
             </p>
             <p className="text-lg text-gray-600">
-              <strong>Status:</strong> {hospital.status} {/* Show hospital status */}
+              <strong>Status:</strong> {hospital.isVerified}
             </p>
 
-            {/* Approve and Disapprove Buttons */}
             <div className="flex flex-col md:flex-row gap-4 mt-4">
               <button
-                className={`uppercase font-black px-4 py-2 ${
-                  hospital.status === "approved"
+                className={`uppercase font-bold px-4 py-2 ${
+                  hospital.isVerified === "Approved"
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-emerald-300 hover:bg-green-400"
-                } text-black rounded-full transition-colors transform hover:scale-105`}
+                    : "bg-emerald-500 hover:bg-emerald-600"
+                } text-white rounded-full`}
                 onClick={handleApprove}
-                disabled={hospital.status === "approved"} // Disable if already approved
+                disabled={hospital.isVerified === "Approved"}
               >
                 Approve
               </button>
               <button
-                className={`uppercase font-black px-4 py-2 ${
-                  hospital.status === "disapproved"
+                className={`uppercase font-bold px-4 py-2 ${
+                  hospital.isVerified === "Disapproved"
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-red-500 hover:bg-red-600"
-                } text-black rounded-full transition-colors transform hover:scale-105`}
+                } text-white rounded-full`}
                 onClick={handleDisapprove}
-                disabled={hospital.status === "disapproved"} // Disable if already disapproved
+                disabled={hospital.isVerified === "Disapproved"}
               >
                 Disapprove
+              </button>
+              <button
+                className={`uppercase font-bold px-4 py-2 ${
+                  hospital.isVerified === "Pending"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600"
+                } text-white rounded-full`}
+                onClick={handlePending}
+                disabled={hospital.isVerified === "Pending"}
+              >
+                Pending
               </button>
             </div>
           </div>

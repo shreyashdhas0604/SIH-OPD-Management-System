@@ -10,14 +10,14 @@ export default function Searchbar({ onSearch, onFilterChange }) {
   const location = useLocation(); // Get the current URL
 
   const specialities = [
-    "Cardiology", "Neurology", "Orthopedics", "Oncology", "Pediatrics", "Gynecology & Obstetrics",
+    "MultiSpeciality","Cardiology", "Neurology", "Orthopedics", "Oncology", "Pediatrics", "Gynecology & Obstetrics",
     "Dermatology", "Gastroenterology", "Pulmonology", "Endocrinology", "Nephrology", "Urology",
     "Ophthalmology", "ENT (Ear, Nose, and Throat)", "Rheumatology", "Psychiatry", "General Surgery",
     "Plastic and Reconstructive Surgery", "Anesthesiology", "Radiology", "Hematology",
     "Emergency Medicine", "Geriatrics", "Infectious Disease", "Palliative Care"
   ];
 
-  const statuses = ["pending", "approved", "disapproved"];
+  const statuses = ["Pending", "Approved", "Disapproved"];
 
   return (
     <div className="flex justify-center items-center p-4 bg-blue-100">

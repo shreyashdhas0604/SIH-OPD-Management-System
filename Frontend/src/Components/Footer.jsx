@@ -3,7 +3,7 @@ import { FaLinkedin, FaInstagram, FaFacebook, FaEnvelope, FaPhone, FaQuestionCir
 
 const Footer = () => {
   return (
-    <footer className="bg-emerald-200 text-gray-800 py-6 px-4 mt-auto w-full">
+    <footer className="bg-gradient-to-r from-blue-300 via-teal-200 to-green-300 text-gray-800 py-6 px-4 mt-auto w-full">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-start text-sm">
         {/* Left Section: Help Details, Contact Us, Address */}
         <div className="flex flex-col md:flex-row md:space-x-6 md:items-start mb-4">

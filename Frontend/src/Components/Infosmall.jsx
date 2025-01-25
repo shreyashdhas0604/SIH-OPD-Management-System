@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import hospitaldata from '../database.js';
 
-export default function Infosmall({ id }) {
-  const hospital = hospitaldata.find(h => h.id === id);
+export default function Infosmall({ id, hospitals }) {
+  const hospital = hospitals.find(h => h.id === id);  // Find the hospital from the hospitals array passed as a prop
   if (!hospital) return <div>Hospital not found</div>;
 
-  const { name, speciality, address, url, status } = hospital;
+  const { name, speciality, address, hospitalImageUrl, status } = hospital;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -15,13 +14,13 @@ export default function Infosmall({ id }) {
 
   useEffect(() => {
     let intervalId;
-    if (isHovered && url.length > 1) {
+    if (isHovered && hospitalImageUrl.length > 1) { 
       intervalId = setInterval(() => {
-        setCurrentImageIndex(prevIndex => (prevIndex + 1) % url.length);
+        setCurrentImageIndex(prevIndex => (prevIndex + 1) % hospitalImageUrl.length);
       }, 2000);
     }
     return () => clearInterval(intervalId);
-  }, [isHovered, url.length]);
+  }, [isHovered, hospitalImageUrl.length]);
 
   const handleButtonClick = () => {
     if (status === 'approved') {
@@ -44,7 +43,7 @@ export default function Infosmall({ id }) {
     >
       <div className="relative w-full h-40 overflow-hidden">
         <img
-          src={url[isHovered ? currentImageIndex : 0]}
+          src={hospitalImageUrl[isHovered ? currentImageIndex : 0]}
           alt={name}
           className="mx-auto w-200 h-full object-cover rounded-3xl transition-opacity duration-500 ease-in-out transform group-hover:scale-110 mt-2"
         />
@@ -63,10 +62,9 @@ export default function Infosmall({ id }) {
       <div className="px-6 py-2">
         <button
           onClick={handleButtonClick}
-          className={`relative w-full py-2 px-4 rounded-3xl transition-transform duration-300 ease-in-out group-hover:scale-110 focus:outline-none bg-emerald-200 hover:bg-emerald-300 text-black font-bold`
-          }
+          className={`relative w-full py-2 px-4 rounded-3xl transition-transform duration-300 ease-in-out group-hover:scale-110 focus:outline-none bg-emerald-200 hover:bg-emerald-300 text-black font-bold`}
         >
-        VIEW
+          VIEW
         </button>
       </div>
     </div>
