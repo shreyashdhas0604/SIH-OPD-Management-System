@@ -16,7 +16,7 @@ import { createClient, RedisClientType } from 'redis';
 // Create a Redis client with custom configuration
 const redisClient: RedisClientType = createClient({
   socket: {
-    host: '127.0.0.1', // Explicitly use the IPv4 address to avoid potential ::1 issues
+    host: process.env.REDIS_HOST || 'redis', // Explicitly use the IPv4 address to avoid potential ::1 issues
     port: 6379,        // Default Redis port
   },
 });

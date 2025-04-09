@@ -1,6 +1,5 @@
 import { Gender, PrismaClient, UserRole } from '@prisma/client';
-import bcrypt from 'bcrypt';
-
+import  bcryptjs  from 'bcryptjs';
 const prisma = new PrismaClient();
 
 export class UserRepository {
@@ -48,7 +47,7 @@ export class UserRepository {
     //for registration
     public async register(user: any) {
        try {
-        const hashedPassword = await bcrypt.hash(user.password, 10);
+        const hashedPassword = await bcryptjs.hash(user.password, 10);
         user.password = hashedPassword;
 
         return this.create(user.username, user.email, user.password, user.role, user.contactNumber,user?.age,user?.gender,user?.address,user?.insuranceCard,user?.rationCard,user?.permanentIllness,user?.disabilityStatus,user?.avatar);
@@ -59,7 +58,7 @@ export class UserRepository {
 
     public async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
         try {
-            return await bcrypt.compare(password, hashedPassword);
+            return await bcryptjs.compare(password, hashedPassword);
         } catch (error) {
             console.log("Error in verifyPassword repo : " + error);
             return false;
@@ -68,7 +67,7 @@ export class UserRepository {
 
     public async updatePassword(email: string, password: string): Promise<any> {
         try {
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await bcryptjs.hash(password, 10);
         const response =  prisma.user.update({
             where: {
                 email: email,

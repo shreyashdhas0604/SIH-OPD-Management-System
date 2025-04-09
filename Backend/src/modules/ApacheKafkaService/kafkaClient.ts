@@ -1,8 +1,8 @@
 import { Kafka, Producer, Consumer } from 'kafkajs';
-
+const brokerAddress = process.env.KAFKA_BROKER || 'localhost:9092';
 const kafka = new Kafka({
   clientId: 'my-app',
-  brokers: ['localhost:9092'], // Replace with your Kafka broker URL
+  brokers: [brokerAddress], // Replace with your Kafka broker URL
 });
 
 const producer: Producer = kafka.producer();
